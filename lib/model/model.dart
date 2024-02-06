@@ -10,7 +10,7 @@ List<FakeStore> fakeStoreFromJson(String str) => List<FakeStore>.from(json.decod
 String fakeStoreToJson(List<FakeStore> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
 
 class FakeStore {
-int id;
+  int id;
   String title;
   double price;
   String description;
@@ -18,7 +18,7 @@ int id;
 
 
   FakeStore({
-required this.id,
+    required this.id,
     required this.title,
     required this.price,
     required this.description,
@@ -37,7 +37,7 @@ required this.id,
   );
 
   Map<String, dynamic> toJson() => {
-
+    "id" : id,
     "title": title,
     "price": price,
     "description": description,

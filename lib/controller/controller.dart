@@ -52,7 +52,8 @@ class ProductController extends GetxController {
     String db_name = "db_user";
     int db_version = 1;
     String table = "user";
-    String id = "id";
+    String id = "idColumn";
+    String idProduct = "id";
     String title = "title";
     String image = "image";
     String price = "price";
@@ -66,6 +67,7 @@ class ProductController extends GetxController {
         db.execute('''
         CREATE TABLE IF NOT EXISTS $table (
               $id INTEGER PRIMARY KEY ,
+              $idProduct INTEGER,
               $title VARCHAR(255),
               $image VARCHAR(255),
               $price MEDIUMINT,
@@ -83,9 +85,10 @@ class ProductController extends GetxController {
     database = await openDatabase(path);
 
     try {
-      List<Map<String, dynamic>> existingData = await database!.query(table, where: "id = ?", whereArgs: [userModel.id]);
+      List<Map<String, dynamic>> existingData = await database!.query(table, where: "id = ?", whereArgs: [userModel.id],);
       if(existingData.isEmpty){
         await database!.insert(table, userModel.toJson());
+        print("Inserted Data: ${userModel.toJson()}");
         Get.snackbar("Pesan", "Item berhasil dimasukkan ke keranjang");
       }else{
         Get.snackbar("Pesan", "Item sudah ada di keranjang");
