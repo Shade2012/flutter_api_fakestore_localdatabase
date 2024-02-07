@@ -15,7 +15,7 @@ class FakeStore {
   double price;
   String description;
   String image;
-
+  bool favorite;
 
   FakeStore({
     required this.id,
@@ -23,28 +23,28 @@ class FakeStore {
     required this.price,
     required this.description,
     required this.image,
-
+    this.favorite = false,
   });
 
   factory FakeStore.fromJson(Map<String, dynamic> json) => FakeStore(
-
+    id: json["id"],
     title: json["title"],
     price: json["price"]?.toDouble(),
     description: json["description"],
     image: json["image"],
-    id: json["id"],
-
+    favorite: false, // Set default value to false
   );
 
   Map<String, dynamic> toJson() => {
-    "id" : id,
+    "id": id,
     "title": title,
     "price": price,
     "description": description,
     "image": image,
-
+    "favorite" :favorite
   };
 }
+
 
 
 

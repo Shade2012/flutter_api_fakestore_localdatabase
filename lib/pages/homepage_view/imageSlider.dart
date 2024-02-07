@@ -16,7 +16,7 @@ class ImageSlider extends StatelessWidget {
          children: [
            Container(
              alignment: Alignment.topLeft,
-               child: Text("New Release",style: HeadingText,)),
+               child: Text("New Release ",style: HeadingText,)),
            Obx(
                 () => CarouselSlider(
               options: CarouselOptions(

@@ -14,8 +14,10 @@ import 'package:sqflite/sqflite.dart';
 class ProductController extends GetxController {
   Database? database;
   RxBool isLoading = false.obs;
+  RxMap<int, bool> isStored = RxMap<int, bool>();
   RxList<FakeStore> fakestore = <FakeStore>[].obs;
   RxList<FakeStore> filteredData = <FakeStore>[].obs;
+
 
 
   @override
@@ -26,28 +28,36 @@ class ProductController extends GetxController {
   }
 
   void fetchProduct() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://fakestoreapi.com/products'),
-      );
-      isLoading.value = true;
-      final result = await Connectivity().checkConnectivity();
-      if(result != ConnectivityResult.none){
-        if (response.statusCode == 200) {
-          fakestore.value = fakeStoreFromJson(response.body);
-          filteredData.assignAll(fakestore);
-          // saveDataToLocalDatabase(fakestore);
-          isLoading.value = false;
-        } else {
-          print('Error: ${response.statusCode}');
-        }
-      } else {
+    isLoading.value = true;
 
+    while (true) {
+      var connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult != ConnectivityResult.none) {
+        try {
+          final response = await http.get(
+            Uri.parse('https://fakestoreapi.com/products'),
+          );
+
+          if (response.statusCode == 200) {
+            fakestore.value = fakeStoreFromJson(response.body);
+            await updateIsStoredFromDatabase();
+            filteredData.assignAll(fakestore);
+            isLoading.value = false;
+            return; // Exit the loop if data is successfully fetched
+          } else {
+            print('Error: ${response.statusCode}');
+          }
+        } catch (e) {
+          print(e);
+        }
       }
-    } catch (e) {
-      print(e);
+
+      await Future.delayed(Duration(seconds: 1)); // Wait for 1 second before retrying
     }
   }
+
+
+
   void initDatabase() async {
     String db_name = "db_user";
     int db_version = 1;
@@ -58,6 +68,7 @@ class ProductController extends GetxController {
     String image = "image";
     String price = "price";
     String description = "description";
+    String favorite = "favorite";
     Directory directory = await getApplicationDocumentsDirectory();
     String path = directory.path + db_name;
 
@@ -71,7 +82,8 @@ class ProductController extends GetxController {
               $title VARCHAR(255),
               $image VARCHAR(255),
               $price MEDIUMINT,
-              $description VARCHAR(255)
+              $description VARCHAR(255),
+              $favorite INTEGER DEFAULT 0
             )''');
       });
     }
@@ -83,20 +95,24 @@ class ProductController extends GetxController {
     Directory directory = await getApplicationDocumentsDirectory();
     String path = directory.path + "db_user";
     database = await openDatabase(path);
-
+    List<Map<String, dynamic>> existingData = await database!.query(table, where: "id = ?", whereArgs: [userModel.id],);
     try {
-      List<Map<String, dynamic>> existingData = await database!.query(table, where: "id = ?", whereArgs: [userModel.id],);
       if(existingData.isEmpty){
-        await database!.insert(table, userModel.toJson());
-        print("Inserted Data: ${userModel.toJson()}");
+        Map<String, dynamic> userData = userModel.toJson();
+        userData['favorite'] = true;
+        await database!.insert(table, userData);
         Get.snackbar("Pesan", "Item berhasil dimasukkan ke keranjang");
+        print(userModel.toJson());
+        isStored[userModel.id] = true;
       }else{
         Get.snackbar("Pesan", "Item sudah ada di keranjang");
+        isStored[userModel.id] = true;
       }
     } catch (e) {
       print("Error inserting data into the database: $e");
     }
   }
+
 
   void runFilter(String enteredKeyword) {
     if (enteredKeyword == null || enteredKeyword.isEmpty) {
@@ -124,6 +140,7 @@ class ProductController extends GetxController {
       Get.snackbar("Pesan", "Item berhasil dihapus dari keranjang");
       Get.off(Bland());
       Get.off(FavoritePage());
+      isStored[id] = false;
     } catch (e) {
       print("Error deleting data from the database: $e");
     }
@@ -138,6 +155,21 @@ class ProductController extends GetxController {
     final data = await database!.query(table);
     List<FakeStore> user = data.map((e) => FakeStore.fromJson(e)).toList();
     return user;
+  }
+
+  Future<void> updateIsStoredFromDatabase() async {
+    String table = "user";
+    Directory directory = await getApplicationDocumentsDirectory();
+    String path = directory.path + "db_user";
+    database = await openDatabase(path);
+
+    List<Map<String, dynamic>> userData = await database!.query(table);
+    // Update isStored map based on favorite status retrieved from the database
+    userData.forEach((row) {
+      int id = row['id'];
+      bool favorite = row['favorite'] == 1; // SQLite stores boolean as 0 or 1
+      isStored[id] = favorite;
+    });
   }
 
 
