@@ -56,7 +56,12 @@ class FavoritePage extends StatelessWidget {
                               Container(
                                 padding: EdgeInsets.only(top: 20),
                                 width: 200,
-                                child: Image.network(user.image),
+                                child:FadeInImage(
+                                  placeholder: AssetImage("asset/image_placeholder.png"),
+                                  image:  NetworkImage(user.image,),
+                                  fit: BoxFit.cover,
+                                ),
+
                               ),
                               Container(
                                 decoration: BoxDecoration(
